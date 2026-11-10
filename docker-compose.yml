@@ -14,7 +14,9 @@ services:
 
   app:
     build: .
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false  # missing key is reported by the app itself
     environment:
       FALKORDB_HOST: falkordb
       FALKORDB_PORT: "6379"
