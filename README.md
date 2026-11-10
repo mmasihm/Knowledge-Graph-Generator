@@ -39,10 +39,11 @@ Design notes:
 - **Signal over noise.** "See also / References / Bibliography / External links" sections
   are dropped before chunking: in these Wikipedia-style PDFs they are 40–70 % of the
   text but contain no new facts. This cuts LLM cost and spurious entities.
-- **Failure handling.** A corrupt or text-less PDF is logged and skipped, not recorded, and
-  retried on the next run. Rate limits, timeouts and 5xx errors are retried with
-  exponential backoff; auth errors fail fast. If some chunks of a file fail, the file is
-  recorded with the failed chunk ids; if all fail, it is not recorded.
+- **Failure handling.** A corrupt or text-less PDF is logged and skipped. A file is
+  recorded in the ledger only if *every* chunk was extracted; otherwise it is retried
+  whole on the next run (MERGE makes that duplicate-free). Rate limits, timeouts and
+  5xx errors are retried with exponential backoff; auth errors and *daily* quota
+  exhaustion fail fast, since waiting seconds cannot help.
 - **SOLID, kept practical.** One responsibility per module; `GraphBuilder` receives its
   graph, tracker and source factory (dependency injection), and depends on a small
   `SourceProcessor` protocol rather than the concrete SDK class, which keeps tests offline.
@@ -122,6 +123,10 @@ database or network is needed (the suite passes with `--network none`).
   from, so facts cannot be traced back to a page.
 - **LLM non-determinism.** Re-running on an empty graph yields a
   slightly different ontology and graph.
+- **Free-tier quotas.** Gemini's free tier allows about 20 requests per model per day,
+  while batch 1 needs about 120 calls (one per chunk plus the ontology). Use a key with
+  billing enabled; on a free key the run stops making progress once the quota is used
+  up, and the next run picks up the files that did not complete.
 - **Throughput.** Batch 1 is 113 chunks after trimming. The SDK rate-limits itself to 15
   LLM calls/minute per process, so a first run takes roughly 8–10 minutes; extraction with
   Unstructured is ~50 s for all five PDFs. Large corpora would need a queue and parallel workers.
