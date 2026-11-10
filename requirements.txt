@@ -1,0 +1,5 @@
+# Runtime dependencies (torch is installed CPU-only by the Dockerfile before these).
+graphrag-sdk==0.8.2
+unstructured[pdf]==0.18.32
+litellm==1.108.4
+python-dotenv==1.2.4
