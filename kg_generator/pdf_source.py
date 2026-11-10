@@ -65,7 +65,7 @@ class PdfSource(AbstractSource):
         elements = self._partition(filename=str(self.path), strategy=self.strategy, languages=["eng"])
         elements = [element for element in elements if element.text and element.text.strip()]
         if not elements:
-            raise EmptyPdfError(f"No text extracted from {self.path.name} (scanned PDF or missing NLTK data?)")
+            raise EmptyPdfError(f"No text extracted from {self.path.name} (unreadable file, scanned PDF or missing NLTK data?)")
         logger.debug("Extracted %d elements from %s", len(elements), self.path.name)
         return elements
 
