@@ -17,17 +17,16 @@ def test_unknown_hash_is_not_ingested(tmp_path):
 
 def test_marked_file_is_remembered_across_instances(tmp_path):
     ledger = tmp_path / "state" / "ledger.json"
-    IngestionTracker(ledger).mark_ingested("abc", "Titanic.pdf", failed_chunks=["Titanic.pdf#3"])
+    IngestionTracker(ledger).mark_ingested("abc", "Titanic.pdf")
 
     reloaded = IngestionTracker(ledger)
 
     assert reloaded.is_ingested("abc")
     assert reloaded.entries()["abc"]["file_name"] == "Titanic.pdf"
-    assert reloaded.entries()["abc"]["failed_chunks"] == ["Titanic.pdf#3"]
 
 
 def test_write_leaves_no_temporary_file(tmp_path):
     ledger = tmp_path / "ledger.json"
-    IngestionTracker(ledger).mark_ingested("abc", "a.pdf", failed_chunks=[])
+    IngestionTracker(ledger).mark_ingested("abc", "a.pdf")
 
     assert [path.name for path in tmp_path.iterdir()] == ["ledger.json"]

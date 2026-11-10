@@ -73,12 +73,15 @@ class GraphBuilder:
             return False
 
         failed_chunks = sorted(self._graph.failed_documents or [])
-        if source.chunk_count == 0 or len(failed_chunks) == source.chunk_count:
-            logger.error("Skipping %s: no chunk was extracted (%d chunks)", path.name, source.chunk_count)
+        if source.chunk_count == 0:
+            logger.error("Skipping %s: it produced no text chunks", path.name)
             return False
         if failed_chunks:
-            logger.warning("%s: %d of %d chunks failed: %s", path.name, len(failed_chunks), source.chunk_count, failed_chunks)
+            # Not recorded, so the next run retries the whole file; MERGE keeps that free of duplicates.
+            logger.error("Not recording %s: %d of %d chunks failed (will retry next run): %s",
+                         path.name, len(failed_chunks), source.chunk_count, failed_chunks)
+            return False
 
-        self._tracker.mark_ingested(file_hash, path.name, failed_chunks)
+        self._tracker.mark_ingested(file_hash, path.name)
         logger.info("Ingested %s (%d chunks)", path.name, source.chunk_count)
         return True

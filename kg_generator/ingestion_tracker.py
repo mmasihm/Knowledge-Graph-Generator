@@ -30,12 +30,11 @@ class IngestionTracker:
         """Return True if a file with this hash was already ingested."""
         return file_hash in self._entries
 
-    def mark_ingested(self, file_hash: str, file_name: str, failed_chunks: list[str]) -> None:
-        """Record a successfully ingested file and persist the ledger immediately."""
+    def mark_ingested(self, file_hash: str, file_name: str) -> None:
+        """Record a fully ingested file and persist the ledger immediately."""
         self._entries[file_hash] = {
             "file_name": file_name,
             "ingested_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "failed_chunks": failed_chunks,
         }
         self._write()
 

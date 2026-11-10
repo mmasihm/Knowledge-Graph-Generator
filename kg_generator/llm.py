@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import time
 from collections.abc import Callable, MutableMapping
 
@@ -12,6 +13,8 @@ from graphrag_sdk.models.litellm import LiteModel, LiteModelChatSession
 from kg_generator.config import Settings
 
 logger = logging.getLogger(__name__)
+
+DAILY_QUOTA = re.compile(r"per ?day", re.IGNORECASE)
 
 TRANSIENT_ERRORS = (
     litellm.RateLimitError,
@@ -67,7 +70,11 @@ class RetryingLiteModel(LiteModel):
 
 def is_transient(error: BaseException) -> bool:
     """Return True if the error (or the one the SDK wrapped) is worth retrying."""
-    return isinstance(error, TRANSIENT_ERRORS) or isinstance(error.__context__, TRANSIENT_ERRORS)
+    cause = error if isinstance(error, TRANSIENT_ERRORS) else error.__context__
+    if not isinstance(cause, TRANSIENT_ERRORS):
+        return False
+    # A daily quota resets in hours; backing off for seconds would only waste time.
+    return not DAILY_QUOTA.search(str(cause))
 
 
 def expose_api_key(model_name: str, api_key: str, environ: MutableMapping[str, str] = os.environ) -> None:

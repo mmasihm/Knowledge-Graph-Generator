@@ -2,7 +2,7 @@ import litellm
 import pytest
 from graphrag_sdk.models import GenerativeModelConfig
 
-from kg_generator.llm import RetryingChatSession, expose_api_key
+from kg_generator.llm import RetryingChatSession, expose_api_key, is_transient
 
 
 class FakeModel:
@@ -46,6 +46,17 @@ def test_permanent_error_is_not_retried(monkeypatch):
 
     with pytest.raises(ValueError):
         session.send_message("hello")
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [("Requests per minute exceeded", True), ("GenerateRequestsPerDayPerProjectPerModel-FreeTier", False)],
+)
+def test_daily_quota_is_not_worth_retrying(message, expected):
+    wrapped = ValueError("Error during completion request")
+    wrapped.__context__ = litellm.RateLimitError(message, llm_provider="gemini", model="test")
+
+    assert is_transient(wrapped) is expected
 
 
 def test_api_key_is_exposed_under_the_provider_variable():
