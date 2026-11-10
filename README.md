@@ -54,7 +54,7 @@ Design notes:
 | **GraphRAG-SDK 0.8.2** | Required framework. Its ontology → extraction → FalkorDB pipeline is exactly the job. Pinned to 0.8.2 because it has the `AbstractSource` / `Ontology` / `KnowledgeGraph` / `KnowledgeGraphModelConfig` API this project extends; 1.x is an async rewrite that drops those classes and pulls in GLiNER and PyTorch. |
 | **Unstructured** (`partition_pdf`, `chunk_by_title`) | Returns typed elements (Title, NarrativeText, ListItem…) instead of a raw text dump. That lets us cut back matter by heading and chunk along section boundaries, so each LLM call sees one coherent topic. The `fast` strategy (pdfminer) suits these digital PDFs; `hi_res`/OCR can be enabled via `PDF_STRATEGY` for scans. |
 | **FalkorDB** | Required graph store; native backend of GraphRAG-SDK. In-memory with low query latency, speaks Cypher, ships a browser UI on port 3000. |
-| **Gemini 2.5 Flash via LiteLLM** | Strong at structured JSON extraction, long context, low cost per token. LiteLLM makes the provider a config value: set `LLM_MODEL=openai/gpt-4.1` (or any LiteLLM id) without code changes. |
+| **Gemini 3.5 Flash via LiteLLM** | Strong at structured JSON extraction, long context, low cost per token, fast (2.5 Flash is no longer offered to new API users). LiteLLM makes the provider a config value: set `LLM_MODEL=openai/gpt-4.1` (or any LiteLLM id) without code changes. |
 | **Docker / Compose** | One command starts FalkorDB (with a health check) and the app. CPU-only PyTorch keeps the image several GB smaller than the default CUDA build. |
 | **pytest** | Offline unit tests with fakes for the LLM and FalkorDB. |
 
@@ -96,7 +96,7 @@ docker compose down -v
 ### Configuration
 
 All settings are environment variables (see `.env.example`): `LLM_API_KEY` (required),
-`LLM_MODEL` (default `gemini/gemini-2.5-flash`), `GRAPH_NAME`, `FALKORDB_HOST`,
+`LLM_MODEL` (default `gemini/gemini-3.5-flash`), `GRAPH_NAME`, `FALKORDB_HOST`,
 `FALKORDB_PORT`, `DATA_DIR` (default `data/batch_1`), `STATE_DIR`, `PDF_STRATEGY`
 (`fast`), `CHUNK_MAX_CHARS` (`8000`), `LOG_LEVEL`.
 
@@ -120,7 +120,7 @@ database or network is needed (the suite passes with `--network none`).
   Titanic" can become two nodes. A normalisation or embedding-based dedup pass would fix it.
 - **No provenance on nodes.** GraphRAG-SDK 0.8.2 does not record which chunk a fact came
   from, so facts cannot be traced back to a page.
-- **LLM non-determinism.** Even at temperature 0, re-running on an empty graph yields a
+- **LLM non-determinism.** Re-running on an empty graph yields a
   slightly different ontology and graph.
 - **Throughput.** Batch 1 is 113 chunks after trimming. The SDK rate-limits itself to 15
   LLM calls/minute per process, so a first run takes roughly 8–10 minutes; extraction with

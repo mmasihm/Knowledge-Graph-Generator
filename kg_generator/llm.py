@@ -81,7 +81,7 @@ def create_model(settings: Settings) -> RetryingLiteModel:
     expose_api_key(settings.llm_model, settings.llm_api_key)
     return RetryingLiteModel(
         settings.llm_model,
-        # Temperature 0 makes extraction as repeatable as the provider allows.
-        generation_config=GenerativeModelConfig(temperature=0),
+        # No sampling overrides: Gemini 3+ deprecates temperature/top_p and warns on every call.
+        generation_config=GenerativeModelConfig(),
         additional_params={"timeout": 300},
     )

@@ -51,6 +51,6 @@ def test_permanent_error_is_not_retried(monkeypatch):
 def test_api_key_is_exposed_under_the_provider_variable():
     environ: dict[str, str] = {}
 
-    expose_api_key("gemini/gemini-2.5-flash", "secret", environ)
+    expose_api_key("gemini/gemini-3.5-flash", "secret", environ)
 
     assert environ["GEMINI_API_KEY"] == "secret"

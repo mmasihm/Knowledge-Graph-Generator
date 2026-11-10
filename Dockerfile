@@ -1,8 +1,10 @@
 FROM python:3.12-slim
 
+# LITELLM_LOCAL_MODEL_COST_MAP: use LiteLLM's bundled model list instead of downloading it at every start.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    NLTK_DATA=/usr/share/nltk_data
+    NLTK_DATA=/usr/share/nltk_data \
+    LITELLM_LOCAL_MODEL_COST_MAP=True
 
 # OpenCV, pulled in by unstructured[pdf], links against these system libraries.
 RUN apt-get update \
