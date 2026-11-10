@@ -20,9 +20,18 @@ logger = logging.getLogger("kg_generator")
 
 def configure_logging(level: str) -> None:
     """Log to stdout and silence chatty third-party loggers."""
-    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s: %(message)s", stream=sys.stdout)
-    for noisy in ("pdfminer", "LiteLLM", "httpx", "graphrag_sdk", "unstructured"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
+    handler = logging.StreamHandler(sys.stdout)
+    # Level on the handler too: the SDK's per-chunk loggers force DEBUG and would otherwise dump whole prompts.
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    logging.basicConfig(level=level, handlers=[handler])
+    noisy_prefixes = ("pdfminer", "pikepdf", "LiteLLM", "httpx", "graphrag_sdk", "unstructured", "numba")
+    # GraphRAG-SDK sets DEBUG on its own module loggers, so each one must be lowered explicitly.
+    for name in list(logging.Logger.manager.loggerDict):
+        if name.startswith(noisy_prefixes):
+            logging.getLogger(name).setLevel(logging.WARNING)
+    # pdfminer warns about every malformed font descriptor; harmless for text extraction.
+    logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 
 def find_pdfs(data_dir: Path) -> list[Path]:
@@ -38,7 +47,11 @@ def run(settings: Settings) -> int:
         return 1
     logger.info("Found %d PDFs in %s", len(pdf_paths), settings.data_dir)
 
-    model = create_model(settings)
+    try:
+        model = create_model(settings)  # makes a tiny test call to validate the key
+    except ValueError as error:
+        logger.error("Cannot use LLM %s: %s Check LLM_API_KEY / LLM_MODEL.", settings.llm_model, error)
+        return 1
     make_source = partial(PdfSource, strategy=settings.pdf_strategy, max_chars=settings.chunk_max_chars)
     ontology = load_or_create_ontology(
         OntologyStore(settings.ontology_path), [make_source(path) for path in pdf_paths], model
