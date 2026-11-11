@@ -119,16 +119,19 @@ database or network is needed (the suite passes with `--network none`).
   missed; extraction then ignores entities that fit no type.
 - **Entity resolution is name-based.** Nodes merge on exact `name`, so "Titanic" and "RMS
   Titanic" can become two nodes. A normalisation or embedding-based dedup pass would fix it.
+- **Documents stay mostly separate.** On batch 1 each PDF forms its own cluster: the
+  topics share few entities, and exact-name merging does not link near-duplicates.
 - **No provenance on nodes.** GraphRAG-SDK 0.8.2 does not record which chunk a fact came
   from, so facts cannot be traced back to a page.
 - **LLM non-determinism.** Re-running on an empty graph yields a
   slightly different ontology and graph.
 - **Free-tier quotas.** Gemini's free tier allows about 20 requests per model per day,
-  while batch 1 needs about 120 calls (one per chunk plus the ontology). Use a key with
-  billing enabled; on a free key the run stops making progress once the quota is used
-  up, and the next run picks up the files that did not complete.
-- **Throughput.** Batch 1 is 113 chunks after trimming. The SDK rate-limits itself to 15
-  LLM calls/minute per process, so a first run takes roughly 8–10 minutes; extraction with
+  and failed attempts (503s, timeouts) count too. At the default chunk size batch 1 needs
+  about 70 calls. With a free key, set `CHUNK_MAX_CHARS=100000`: each PDF then becomes
+  1–2 chunks (8 in total, about 14 calls with the ontology), at the cost of fewer
+  entities per page. Files that do not complete are picked up by the next run.
+- **Throughput.** Batch 1 is 65 chunks after trimming at the default size. The SDK rate-limits itself to 15
+  LLM calls/minute per process, so a first run takes roughly 5–8 minutes; extraction with
   Unstructured is ~50 s for all five PDFs. Large corpora would need a queue and parallel workers.
 - **Ontology pass re-reads PDFs.** The SDK only uses the first chunk of each source for the
   ontology, but Unstructured must still partition the whole PDF to produce it (~1 minute

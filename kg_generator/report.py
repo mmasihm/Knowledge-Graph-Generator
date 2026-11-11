@@ -18,9 +18,8 @@ EXAMPLE_QUERIES: dict[str, str] = {
         "MATCH (a)-[r]-(b) WHERE toLower(a.name) CONTAINS 'titanic' "
         "RETURN a.name, type(r), labels(b)[0], b.name LIMIT 5"
     ),
-    "Two-hop path between documents' topics": (
-        "MATCH p = (a)-[*1..2]-(b) WHERE toLower(a.name) CONTAINS 'world war' "
-        "AND toLower(b.name) CONTAINS 'titanic' RETURN [n IN nodes(p) | n.name] LIMIT 3"
+    "Entities with no relations (extraction quality check)": (
+        "MATCH (n) WHERE NOT (n)--() RETURN labels(n)[0] AS label, count(n) AS unlinked ORDER BY unlinked DESC"
     ),
 }
 
