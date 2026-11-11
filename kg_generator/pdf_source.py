@@ -46,11 +46,13 @@ class PdfSource(AbstractSource):
     def load(self) -> Iterator[Document]:
         """Yield the PDF body as text chunks, each tagged with its source file."""
         elements = drop_back_matter(self._extract_elements())
+        soft_limit = int(self.max_chars * 0.75)
         chunks = chunk_by_title(
             elements,
             max_characters=self.max_chars,
-            new_after_n_chars=int(self.max_chars * 0.75),
-            combine_text_under_n_chars=self.max_chars // 4,
+            new_after_n_chars=soft_limit,
+            # Pack consecutive short sections together: fewer, fuller chunks mean fewer LLM calls.
+            combine_text_under_n_chars=soft_limit,
         )
         self.chunk_count = 0
         for chunk in chunks:
